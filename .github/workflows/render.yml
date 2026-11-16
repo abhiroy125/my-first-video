@@ -1,34 +1,34 @@
 name: Render Video to MP4
 
-  on:
-    push:
-      branches: [ main, master ]
-    workflow_dispatch:
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
-  jobs:
-    render:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: 22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-        - name: Install FFmpeg
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-        - name: Render Video
-          run: |
-            npm ci || npm install
-            npx hyperframes render --strict=false
+      - name: Render Video
+        run: |
+          npm ci || npm install
+          npx hyperframes render --strict=false
 
-        - name: Upload Video Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: hyperframes-rendered-video
-            path: renders/*.mp4
+      - name: Upload Video Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hyperframes-rendered-video
+          path: renders/*.mp4
