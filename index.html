@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pushpak Viman and Jatayu</title>
+    <title>Pushpak Viman and Jatayu - Cinematic Rendering</title>
     <style>
-        body { margin: 0; padding: 0; width: 1080px; height: 1920px; background: #87CEEB; overflow: hidden; }
+        body { margin: 0; padding: 0; width: 1080px; height: 1920px; background: #050508; overflow: hidden; }
         .clip { position: absolute; width: 1080px; height: 1920px; top: 0; left: 0; }
     </style>
 </head>
@@ -21,68 +21,368 @@
         const canvas = document.getElementById('stage');
         const ctx = canvas.getContext('2d');
 
-        function drawViman(x, y, rotation) {
+        // Particle System State (Deterministic based on progress)
+        function getSeedRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // --- Render Components ---
+
+        function drawSkyAndSun(t) {
+            // Cinematic Sunset Sky
+            let grad = ctx.createLinearGradient(0, 0, 0, 1920);
+            grad.addColorStop(0, '#090B10');
+            grad.addColorStop(0.3, '#1A0C27');
+            grad.addColorStop(0.65, '#8C271E');
+            grad.addColorStop(0.85, '#D96B27');
+            grad.addColorStop(1, '#F2A649');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 1080, 1920);
+
+            // Sun Glow Behind Clouds
+            let sunGrad = ctx.createRadialGradient(540, 1400, 50, 540, 1400, 600);
+            sunGrad.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+            sunGrad.addColorStop(0.5, 'rgba(217, 107, 39, 0.2)');
+            sunGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = sunGrad;
+            ctx.fillRect(0, 0, 1080, 1920);
+        }
+
+        function drawCloudLayer(yBase, opacity, speedMult, time, scale) {
             ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(rotation);
-            // Boat body (Golden)
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(-150, 0, 300, 100);
-            // Swan-neck prow
-            ctx.beginPath();
-            ctx.moveTo(-150, 0);
-            ctx.quadraticCurveTo(-250, -50, -200, -100);
-            ctx.stroke();
-            // Three-tier Shikhara
-            ctx.fillStyle = '#DAA520';
-            ctx.fillRect(-50, -100, 100, 100);
-            ctx.fillRect(-30, -150, 60, 50);
-            ctx.fillRect(-15, -180, 30, 30);
-            // Kalash
-            ctx.fillStyle = '#FF4500';
-            ctx.beginPath();
-            ctx.arc(0, -195, 15, 0, Math.PI * 2);
-            ctx.fill();
-            // Flag
-            ctx.fillStyle = '#FF8C00';
-            ctx.fillRect(15, -210, 40, 20);
+            ctx.fillStyle = `rgba(30, 20, 35, ${opacity})`;
+            ctx.shadowColor = 'rgba(217, 107, 39, 0.15)';
+            ctx.shadowBlur = 30 * scale;
+
+            let offset = (time * 120 * speedMult) % 1200;
+
+            for (let i = -1; i < 3; i++) {
+                let cx = (i * 600) - offset;
+                let cy = yBase;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, 220 * scale, 0, Math.PI * 2);
+                ctx.arc(cx + 180, cy - 80 * scale, 170 * scale, 0, Math.PI * 2);
+                ctx.arc(cx + 380, cy - 20 * scale, 230 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
             ctx.restore();
         }
 
-        function drawJatayu(x, y, frame) {
-            ctx.fillStyle = '#8B4513'; // Feathers
+        function drawPushpakViman(x, y, scale, tiltAngle, time) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(tiltAngle);
+            ctx.scale(scale, scale);
+
+            // Metallic Gold Shading Gradient
+            let goldGrad = ctx.createLinearGradient(-300, -200, 300, 100);
+            goldGrad.addColorStop(0, '#FFE082');
+            goldGrad.addColorStop(0.3, '#FFB300');
+            goldGrad.addColorStop(0.7, '#FF8F00');
+            goldGrad.addColorStop(1, '#8D6E63');
+
+            // --- Floating Platform Base (Temple-Boat) ---
+            ctx.fillStyle = goldGrad;
+            ctx.shadowColor = 'rgba(255, 179, 0, 0.5)';
+            ctx.shadowBlur = 35;
+
             ctx.beginPath();
-            ctx.arc(x, y, 40, 0, Math.PI * 2); // Body
+            ctx.moveTo(-280, 0);
+            // Swan-neck prow (Left)
+            ctx.bezierCurveTo(-400, -80, -360, -220, -280, -180);
+            ctx.bezierCurveTo(-250, -150, -240, -60, -180, -10);
+            // Hull bottom curve
+            ctx.quadraticCurveTo(0, 140, 220, 10);
+            // Peacock-curl stern (Right)
+            ctx.bezierCurveTo(320, -50, 380, -160, 300, -200);
+            ctx.bezierCurveTo(250, -220, 220, -120, 180, 0);
+            ctx.closePath();
             ctx.fill();
-            ctx.fillStyle = '#FFC0CB'; // Pink head
+
+            // Swan Prow Crown & Details
+            ctx.fillStyle = '#FFF8E1';
             ctx.beginPath();
-            ctx.arc(x+10, y-30, 20, 0, Math.PI * 2);
+            ctx.arc(-280, -180, 24, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#DD2C00'; // Beak
+            ctx.beginPath();
+            ctx.moveTo(-300, -180); ctx.lineTo(-330, -175); ctx.lineTo(-300, -165);
+            ctx.fill();
+
+            // --- Pillared Pavilion (Mandapa) ---
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#FFB300';
+            let pillarXs = [-140, -60, 40, 120];
+            pillarXs.forEach(px => {
+                ctx.fillRect(px, -140, 18, 140);
+            });
+            ctx.fillStyle = '#FFA000';
+            ctx.fillRect(-160, 0, 340, 20); // Platform floor
+            ctx.fillRect(-160, -160, 340, 20); // Roof slab
+
+            // --- Three-Tier Shikhara ---
+            // Tier 1
+            ctx.fillStyle = '#FF8F00';
+            ctx.fillRect(-110, -230, 240, 70);
+            // Tier 2
+            ctx.fillStyle = '#FFB300';
+            ctx.fillRect(-75, -290, 170, 60);
+            // Tier 3
+            ctx.fillStyle = '#FFE082';
+            ctx.fillRect(-45, -340, 110, 50);
+
+            // --- Kalash (Sacred Spire Ornament) ---
+            ctx.fillStyle = '#FF3D00';
+            ctx.shadowColor = 'rgba(255, 61, 0, 0.8)';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(10, -365, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // --- Saffron Dhwaja (Flag) with Wave Physics ---
+            let flagWave = Math.sin(time * 10) * 12;
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(10, -387);
+            ctx.lineTo(10, -460);
+            ctx.stroke();
+
+            ctx.fillStyle = '#FF6D00';
+            ctx.beginPath();
+            ctx.moveTo(10, -460);
+            ctx.quadraticCurveTo(50 + flagWave, -445, 90 + flagWave, -435);
+            ctx.quadraticCurveTo(50 + flagWave, -420, 10, -410);
+            ctx.fill();
+
+            ctx.restore();
         }
 
-        // Render loop logic driven by GSAP timeline
+        function drawCinematicJatayu(x, y, scale, time, isStriking) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Wingbeat Cycle Animation
+            let wingBeat = isStriking ? -0.8 : Math.sin(time * 14) * 0.7;
+
+            // --- Giant Eagle/Vulture Wings ---
+            let featherGrad = ctx.createLinearGradient(0, -200, 0, 200);
+            featherGrad.addColorStop(0, '#261C14');
+            featherGrad.addColorStop(0.5, '#3E2723');
+            featherGrad.addColorStop(1, '#1A0E07');
+
+            ctx.fillStyle = featherGrad;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+
+            // Left Wing (Multi-joint Feather Silhouette)
+            ctx.save();
+            ctx.rotate(wingBeat);
+            ctx.beginPath();
+            ctx.moveTo(-20, -30);
+            ctx.bezierCurveTo(-180, -220, -380, -140, -420, -20);
+            ctx.bezierCurveTo(-320, 40, -200, 80, -20, 30);
+            ctx.fill(); ctx.stroke();
+            ctx.restore();
+
+            // Right Wing
+            ctx.save();
+            ctx.rotate(-wingBeat);
+            ctx.beginPath();
+            ctx.moveTo(20, -30);
+            ctx.bezierCurveTo(180, -220, 380, -140, 420, -20);
+            ctx.bezierCurveTo(320, 40, 200, 80, 20, 30);
+            ctx.fill(); ctx.stroke();
+            ctx.restore();
+
+            // --- Vulture Body & Muscular Torso ---
+            ctx.fillStyle = '#3E2723';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 45, 80, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // --- White Feathered Ruff Collar ---
+            ctx.fillStyle = '#ECEFF1';
+            ctx.shadowColor = 'rgba(255,255,255,0.3)';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.ellipse(0, -60, 32, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // --- Bald Pink Head & Menacing Eyes ---
+            ctx.fillStyle = '#FF8A80'; // Pink Skin Tone
+            ctx.beginPath();
+            ctx.arc(0, -85, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fierce Eagle Beak
+            ctx.fillStyle = '#CFD8DC';
+            ctx.beginPath();
+            ctx.moveTo(-8, -90);
+            ctx.lineTo(0, -125);
+            ctx.lineTo(10, -90);
+            ctx.fill();
+
+            // Glowing Eyes
+            ctx.fillStyle = '#FFD54F';
+            ctx.beginPath();
+            ctx.arc(-8, -90, 4, 0, Math.PI * 2);
+            ctx.arc(8, -90, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // --- Talons (Throw Forward on Strike) ---
+            ctx.strokeStyle = '#FFC107';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            if (isStriking) {
+                // Extended lethal claws reaching forward
+                ctx.moveTo(-20, 40); ctx.lineTo(-35, 120);
+                ctx.moveTo(20, 40);  ctx.lineTo(35, 120);
+            } else {
+                // Tucked in flight
+                ctx.moveTo(-20, 40); ctx.lineTo(-25, 70);
+                ctx.moveTo(20, 40);  ctx.lineTo(25, 70);
+            }
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawEffectsAndParticles(t) {
+            // Strike occurs at t = 2.0s
+            if (t >= 1.95 && t <= 2.15) {
+                // 1. Intense Camera Lens Flare / Screen Flash
+                let flashAlpha = 1.0 - ((t - 1.95) / 0.2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${flashAlpha * 0.95})`;
+                ctx.fillRect(0, 0, 1080, 1920);
+
+                // Golden Burst Radial Wave
+                let radius = (t - 1.95) * 4500;
+                ctx.strokeStyle = `rgba(255, 215, 0, ${flashAlpha})`;
+                ctx.lineWidth = 25;
+                ctx.beginPath();
+                ctx.arc(540, 1020, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 2. Feather & Golden Spark Particle Explosion (Post-Impact)
+            if (t > 2.0) {
+                let dt = t - 2.0;
+
+                // Deterministic Sparks
+                for (let i = 0; i < 45; i++) {
+                    let seed = i * 1.5;
+                    let angle = getSeedRandom(seed) * Math.PI * 2;
+                    let speed = 200 + getSeedRandom(seed + 1) * 800;
+                    let sx = 540 + Math.cos(angle) * speed * dt;
+                    let sy = 1020 + Math.sin(angle) * speed * dt;
+                    let sparkAlpha = Math.max(0, 1.0 - (dt / 1.2));
+
+                    ctx.fillStyle = `rgba(255, 215, 0, ${sparkAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 5 + getSeedRandom(seed + 2) * 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Deterministic Falling Feathers
+                for (let i = 0; i < 35; i++) {
+                    let seed = i * 3.7;
+                    let vx = (getSeedRandom(seed) - 0.5) * 400;
+                    let vy = (getSeedRandom(seed + 1) - 0.2) * 300 + (dt * 250); // Flutter + Gravity
+                    let fx = 540 + vx * dt + Math.sin(dt * 8 + seed) * 40;
+                    let fy = 1020 + vy * dt;
+                    let rot = dt * 5 + seed;
+                    let fAlpha = Math.max(0, 1.0 - (dt / 2.5));
+
+                    ctx.save();
+                    ctx.translate(fx, fy);
+                    ctx.rotate(rot);
+                    ctx.fillStyle = `rgba(62, 39, 35, ${fAlpha})`;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, 14, 5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // Birds Scattering in Background
+                for (let i = 0; i < 16; i++) {
+                    let seed = i * 8.3;
+                    let bx = (getSeedRandom(seed) * 900) - (dt * 350 * (1 + getSeedRandom(seed+1)));
+                    let by = 600 + (getSeedRandom(seed + 2) * 400) - (dt * 250);
+                    let birdSize = 6 + getSeedRandom(seed + 3) * 6;
+
+                    ctx.strokeStyle = `rgba(15, 10, 20, ${Math.max(0, 1.0 - dt/3)})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(bx - birdSize, by);
+                    ctx.lineTo(bx, by - birdSize * Math.sin(t * 15 + seed));
+                    ctx.lineTo(bx + birdSize, by);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // --- GSAP Timeline Master Loop ---
         tl.to({ time: 0 }, {
             duration: 5,
             onUpdate: function() {
                 const t = this.progress() * 5;
                 ctx.clearRect(0, 0, 1080, 1920);
 
-                // Clouds
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fillRect(0, 1500, 1080, 420);
+                // 1. Cinematic Background & Sky
+                drawSkyAndSun(t);
 
-                // Viman
-                drawViman(540, 1400, 0);
+                // 2. Multi-layer Parallax Clouds (Far)
+                drawCloudLayer(1700, 0.4, 0.3, t, 0.8);
+                drawCloudLayer(1650, 0.7, 0.6, t, 1.0);
 
-                // Jatayu logic
-                let jx = 900 - (t * 200);
-                let jy = 200 + (t * 300);
-                if (t >= 1.7 && t < 2.0) {
-                    jx = 500; jy = 1200; // Strike position
-                } else if (t >= 2.0) {
-                    jx = 400 + (t * 100); jy = 1300 - (t * 200);
+                // 3. Viman Motion (Float + Lurch on Hit)
+                let vimanX = 540;
+                let vimanY = 1380 + Math.sin(t * 2.5) * 18;
+                let tiltAngle = 0;
+
+                // Lurch effect post-impact (2.0s - 2.6s)
+                if (t >= 2.0 && t < 2.6) {
+                    let lurchProgress = (t - 2.0) / 0.6;
+                    tiltAngle = Math.sin(lurchProgress * Math.PI * 3) * 0.18; // Heavy impact tilt
                 }
-                drawJatayu(jx, jy, t);
+
+                drawPushpakViman(vimanX, vimanY, 1.15, tiltAngle, t);
+
+                // 4. Parallax Clouds (Mid-Ground)
+                drawCloudLayer(1720, 0.9, 1.0, t, 1.2);
+
+                // 5. Jatayu Diving & Striking Trajectory
+                let jx, jy, jScale = 1.3, isStriking = false;
+
+                if (t < 1.7) {
+                    // Dive in from top right
+                    let p = t / 1.7;
+                    jx = 1200 - (p * 660); // 1200 down to 540
+                    jy = -200 + (p * 1220); // -200 down to 1020
+                } else if (t >= 1.7 && t < 2.0) {
+                    // Flare wings, extend talons, strike kalash
+                    let p = (t - 1.7) / 0.3;
+                    jx = 540;
+                    jy = 1020 + (p * 10);
+                    isStriking = true;
+                } else {
+                    // Escape upward to upper left
+                    let p = (t - 2.0) / 3.0;
+                    jx = 540 - (p * 750);
+                    jy = 1030 - (p * 1300);
+                }
+
+                drawCinematicJatayu(jx, jy, jScale, t, isStriking);
+
+                // 6. Impact Flares, Sparks, Feathers, & Birds
+                drawEffectsAndParticles(t);
             }
         });
     </script>
